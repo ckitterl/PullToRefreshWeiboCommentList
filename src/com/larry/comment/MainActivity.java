@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AbsListView.LayoutParams;
 import android.widget.AbsListView.OnScrollListener;
@@ -24,13 +25,14 @@ public class MainActivity extends Activity implements OnScrollListener {
 	private TextView mHeaderContentView;
 	private View mStickItemView;
 	private PopupWindow mPopupWindow;
-	
+	private ViewGroup mParentView;
+
 	private boolean mIsInit = false;
-	
+
 	private static final String TAG = "MainActivity";
 
 	private float mOldY = 0;
-	
+
 	private int mHeaderTextContentViewHeight;
 
 	@Override
@@ -46,7 +48,6 @@ public class MainActivity extends Activity implements OnScrollListener {
 		getMenuInflater().inflate(R.menu.main, menu);
 		return true;
 	}
-	
 
 	@Override
 	protected void onResume() {
@@ -63,27 +64,27 @@ public class MainActivity extends Activity implements OnScrollListener {
 	private void init() {
 		mListView = (ListView) findViewById(R.id.list_view);
 		mHeaderContentView = new TextView(this);
-		mHeaderContentView.setText("用嘀嘀叫车。上车后司机问你装快的了没，我说有。司机说你用这个再下一个假单我来接，我们一起赚这两个冤大头的钱。");
+		mHeaderContentView
+				.setText("用嘀嘀叫车。上车后司机问你装快的了没，我说有。司机说你用这个再下一个假单我来接，我们一起赚这两个冤大头的钱。");
 		mListView.addHeaderView(mHeaderContentView);
 		mPlaceHolder = new View(this);
-		mPlaceHolder.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT,
-				Utils.dp2px(this, 200)));
+		mPlaceHolder.setLayoutParams(new LayoutParams(
+				LayoutParams.MATCH_PARENT, Utils.dp2px(this, 200)));
 		mPlaceHolder.setBackgroundColor(Color.BLACK);
 		mListView.addHeaderView(mPlaceHolder);
 		mListView.setAdapter(new ArrayAdapter<String>(this,
 				android.R.layout.simple_list_item_1, items));
-		
+
 		mHeaderTextContentViewHeight = mHeaderContentView.getHeight();
-		
+
 		mStickItemView = new View(this);
 		mPlaceHolder.setBackgroundColor(Color.BLUE);
 
-		mPopupWindow = new PopupWindow(mStickItemView,
-				LayoutParams.MATCH_PARENT,
-				Utils.dp2px(this, 200), false);
-		mPopupWindow.showAtLocation(parentView, Gravity.CENTER, -5, 30);
-//		RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) mStickItemView.getLayoutParams();
-		
+		mParentView = (ViewGroup) findViewById(R.id.parent);
+
+		// RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams)
+		// mStickItemView.getLayoutParams();
+
 	}
 
 	private static final String[] items = new String[] {
@@ -92,7 +93,7 @@ public class MainActivity extends Activity implements OnScrollListener {
 			"The TextView class also takes care of its own scrolling, so does not require a ScrollView, but using the two together is possible to achieve the effect of a text view within a larger container.",
 			"ScrollView only supports vertical scrolling. For horizontal scrolling, use HorizontalScrollView.",
 			"Adds a child view. If no layout parameters are already set on the child, the default parameters for this ViewGroup are set on the child." };
-	
+
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	@Override
 	public void onScroll(AbsListView view, int firstVisibleItem,
@@ -100,10 +101,9 @@ public class MainActivity extends Activity implements OnScrollListener {
 		Log.d(TAG, "onScroll");
 		int state = getStickItemState();
 		if (state == FLOAT && mIsInit) {
-//			mListView.getScrollY();
-			float scrollY = mOldY - mPlaceHolder.getY();
-			mOldY = mPlaceHolder.getY();
-			mStickItemView.scrollBy(0, (int) mOldY);
+			// mListView.getScrollY();
+			int scrollY = (int) (mOldY - mPlaceHolder.getY());
+			mPopupWindow.update(0, 500, -1, -1);
 			Log.d(TAG, "scrollY: " + scrollY);
 		}
 	}
@@ -112,32 +112,40 @@ public class MainActivity extends Activity implements OnScrollListener {
 	@Override
 	public void onScrollStateChanged(AbsListView view, int scrollState) {
 		Log.d(TAG, "onScrollStateChanged");
-		if (scrollState == SCROLL_STATE_TOUCH_SCROLL || scrollState == SCROLL_STATE_FLING) {
+		if (scrollState == SCROLL_STATE_TOUCH_SCROLL
+				|| scrollState == SCROLL_STATE_FLING) {
 			mIsInit = true;
+			if (mPopupWindow == null) {
+				mPopupWindow = new PopupWindow(mStickItemView,
+						LayoutParams.MATCH_PARENT, Utils.dp2px(this, 200),
+						false);
+				mPopupWindow.showAtLocation(mParentView, Gravity.NO_GRAVITY, 0,
+						0);
+			}
 			mOldY = mPlaceHolder.getY();
 		} else {
 			mOldY = 0;
 		}
 
 	}
-	
+
 	private static final int HANG = 0;
 	private static final int FLOAT = 0;
+
 	private int getStickItemState() {
 		final Adapter adapter = mListView.getAdapter();
 		if (adapter == null || adapter.isEmpty()) {
 		}
-		
+
 		if (mPlaceHolder.getTop() >= mListView.getTop()) {
 			return HANG;
 		} else {
 			return FLOAT;
 		}
 	}
-	
+
 	private enum StickItemState {
-		GONE,
-		VISI
+		GONE, VISI
 	}
 
 }
