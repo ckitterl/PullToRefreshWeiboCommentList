@@ -1,15 +1,13 @@
 package com.larry.comment;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.AbsListView;
 import android.widget.AbsListView.LayoutParams;
 import android.widget.AbsListView.OnScrollListener;
@@ -35,9 +33,12 @@ public class MainActivity extends Activity implements OnScrollListener {
 
 	private int mHeaderTextContentViewHeight;
 
+	int[] location = new int[2];
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.activity_main);
 		init();
 	}
@@ -77,14 +78,8 @@ public class MainActivity extends Activity implements OnScrollListener {
 
 		mHeaderTextContentViewHeight = mHeaderContentView.getHeight();
 
-		mStickItemView = new View(this);
-		mPlaceHolder.setBackgroundColor(Color.BLUE);
-
-		mParentView = (ViewGroup) findViewById(R.id.parent);
-
-		// RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams)
-		// mStickItemView.getLayoutParams();
-
+		mStickItemView = findViewById(R.id.extend_item);
+		mStickItemView.setBackgroundColor(Color.BLACK);
 	}
 
 	private static final String[] items = new String[] {
@@ -94,37 +89,28 @@ public class MainActivity extends Activity implements OnScrollListener {
 			"ScrollView only supports vertical scrolling. For horizontal scrolling, use HorizontalScrollView.",
 			"Adds a child view. If no layout parameters are already set on the child, the default parameters for this ViewGroup are set on the child." };
 
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	@Override
 	public void onScroll(AbsListView view, int firstVisibleItem,
 			int visibleItemCount, int totalItemCount) {
-		Log.d(TAG, "onScroll");
-		int state = getStickItemState();
-		if (state == FLOAT && mIsInit) {
-			// mListView.getScrollY();
-			int scrollY = (int) (mOldY - mPlaceHolder.getY());
-			mPopupWindow.update(0, 500, -1, -1);
-			Log.d(TAG, "scrollY: " + scrollY);
+
+		if (mIsInit) {
+			showStickItem();
 		}
+		/*
+		 * int state = getStickItemState(); if (state == FLOAT && mIsInit) { //
+		 * mListView.getScrollY(); view.getLocationOnScreen(location); int
+		 * scrollY = (int) (mOldY - mPlaceHolder.getY()); mPopupWindow.update(0,
+		 * (int) mPlaceHolder.getY() + location[1], -1, -1); Log.d(TAG,
+		 * "scrollY: " + scrollY + " , contentViewTop: " + location[1]); }
+		 */
 	}
 
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	@Override
 	public void onScrollStateChanged(AbsListView view, int scrollState) {
 		Log.d(TAG, "onScrollStateChanged");
 		if (scrollState == SCROLL_STATE_TOUCH_SCROLL
 				|| scrollState == SCROLL_STATE_FLING) {
 			mIsInit = true;
-			if (mPopupWindow == null) {
-				mPopupWindow = new PopupWindow(mStickItemView,
-						LayoutParams.MATCH_PARENT, Utils.dp2px(this, 200),
-						false);
-				mPopupWindow.showAtLocation(mParentView, Gravity.NO_GRAVITY, 0,
-						0);
-			}
-			mOldY = mPlaceHolder.getY();
-		} else {
-			mOldY = 0;
 		}
 
 	}
@@ -137,6 +123,7 @@ public class MainActivity extends Activity implements OnScrollListener {
 		if (adapter == null || adapter.isEmpty()) {
 		}
 
+		Log.d(TAG, "top: " + mListView.getTop());
 		if (mPlaceHolder.getTop() >= mListView.getTop()) {
 			return HANG;
 		} else {
@@ -144,8 +131,15 @@ public class MainActivity extends Activity implements OnScrollListener {
 		}
 	}
 
-	private enum StickItemState {
-		GONE, VISI
+	private void showStickItem() {
+		if (mPlaceHolder.getTop() < mListView.getTop()
+				&& !mStickItemView.isShown()) {
+			Log.d(TAG, "mHeaderContentView.getBottom(): " + mHeaderContentView.getBottom()
+					+ ", mListView.getTop():" + mListView.getTop());
+			mStickItemView.setVisibility(View.VISIBLE);
+		} else if (mPlaceHolder.getTop() >= mListView.getTop()
+				&& mStickItemView.isShown()) {
+			mStickItemView.setVisibility(View.GONE);
+		}
 	}
-
 }
